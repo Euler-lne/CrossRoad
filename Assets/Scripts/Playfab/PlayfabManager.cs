@@ -7,6 +7,7 @@ using System;
 
 public class PlayfabManager : Singleton<PlayfabManager>
 {
+    private List<int> scoreList;
     protected override void Awake()
     {
         base.Awake();
@@ -47,10 +48,79 @@ public class PlayfabManager : Singleton<PlayfabManager>
         PlayFabClientAPI.UpdatePlayerStatistics(request, OnUpdatePlayerStatistics, OnError);
     }
 
+    public int GetOnlineScoreAtIndex(int index)
+    {
+        Debug.Log(scoreList);
+        if (scoreList == null || index >= scoreList.Count)
+        {
+            return -1;
+        }
+        else
+        {
+            return scoreList[index];
+        }
+    }
+
     private void OnUpdatePlayerStatistics(UpdatePlayerStatisticsResult result)
     {
-        Debug.Log("Liaderboard Updated!");
+        Debug.Log("Leaderboard Updated!");
+        GetLeaderboardData();
     }
+    // 创建一个协程方法来封装GetLeaderboard的异步处理
+    public IEnumerator GetLeaderboardDataCoroutine(Action<GetLeaderboardResult> onSuccess, Action<PlayFabError> onError)
+    {
+        bool isDone = false;
+        GetLeaderboardResult leaderboardResult = null;
+        PlayFabError errorResult = null;
+
+        // 发起请求
+        PlayFabClientAPI.GetLeaderboard(new GetLeaderboardRequest
+        {
+            StatisticName = "HighScores",
+            StartPosition = 0,
+            MaxResultsCount = 10
+        }, result =>
+        {
+            leaderboardResult = result;
+            isDone = true;
+        }, error =>
+        {
+            errorResult = error;
+            isDone = true;
+        });
+
+        // 等待请求完成
+        yield return new WaitUntil(() => isDone);
+
+        // 处理结果
+        if (errorResult != null)
+        {
+            onError?.Invoke(errorResult);
+        }
+        else
+        {
+            onSuccess?.Invoke(leaderboardResult);
+        }
+    }
+    public void GetLeaderboardData()
+    {
+        var request = new GetLeaderboardRequest();
+        request.StatisticName = "HighScores";
+        request.StartPosition = 0;
+        request.MaxResultsCount = 10;
+        PlayFabClientAPI.GetLeaderboard(request, OnGetLeaderboard, OnError);
+    }
+    private void OnGetLeaderboard(GetLeaderboardResult result)
+    {
+        scoreList = new List<int>();
+        foreach (var item in result.Leaderboard)
+        {
+            Debug.Log(item.Position + " " + item.DisplayName + " " + item.StatValue);
+            scoreList.Add(item.StatValue);
+        }
+    }
+
+
     private void OnError(PlayFabError error)
     {
         Debug.Log("Login Errror");

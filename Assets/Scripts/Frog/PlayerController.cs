@@ -37,6 +37,8 @@ public class PlayerController : MonoBehaviour
     private Vector2 touchPosition;
     private RaycastHit2D[] result = new RaycastHit2D[2];
     private int score;
+    private const int RiverTestTimes = 3;
+    private int riverTestTimer;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -50,6 +52,7 @@ public class PlayerController : MonoBehaviour
         terrainType = Settings.TerrainType.Grass;
         dirObject.SetActive(false);
         jumpDirction = Direction.NoDir;
+        riverTestTimer = 0;
     }
 
     private void Update()
@@ -82,42 +85,58 @@ public class PlayerController : MonoBehaviour
     private void OnDestroy()
     {
         isDead = false;
+        EventHandler.CallFrogDead();
     }
 
     private void OnTriggerStay2D(Collider2D other)
     {
-        if (!isJump && other.CompareTag("River"))
+        if (isJump)
         {
-            Physics2D.RaycastNonAlloc(transform.position, Vector2.one * 0.1f, result, 0.5f);
-            foreach (var hit in result)
+            if (other.CompareTag("Border"))
             {
-                if (hit.collider == null) continue;
-                if (hit.collider.CompareTag("Wood"))
+                isDead = true;
+                Debug.Log("Border");
+            }
+            riverTestTimer = 0;
+        }
+        else
+        {
+            if (other.CompareTag("River"))
+            {
+                Physics2D.RaycastNonAlloc(transform.position, Vector2.one * 0.1f, result, 0.5f);
+                foreach (var hit in result)
                 {
-                    float width = hit.collider.bounds.size.x;
-                    if (Mathf.Abs(transform.position.x - hit.collider.transform.position.x) < width / 2 - 0.2f)
+                    if (hit.collider == null) continue;
+                    if (hit.collider.CompareTag("Wood"))
                     {
-                        transform.parent = hit.collider.transform;
-                        isOnWood = true;
-                        break;
+                        float width = hit.collider.bounds.size.x;
+                        if (Mathf.Abs(transform.position.x - hit.collider.transform.position.x) < width / 2 - 0.2f)
+                        {
+                            transform.parent = hit.collider.transform;
+                            isOnWood = true;
+                            riverTestTimer = 0;
+                            break;
+                        }
+                    }
+                }
+                if (!isOnWood)
+                {
+                    if (riverTestTimer >= RiverTestTimes)
+                    {
+                        isDead = true;
+                        Debug.Log("Water");
+                    }
+                    else
+                    {
+                        riverTestTimer++;
                     }
                 }
             }
-            if (!isOnWood)
+            if (other.CompareTag("Obstacle"))
             {
                 isDead = true;
-                Debug.Log("Water");
+                Debug.Log("Obstacle");
             }
-        }
-        if (other.CompareTag("Border"))
-        {
-            isDead = true;
-            Debug.Log("Border");
-        }
-        if (!isJump && other.CompareTag("Obstacle"))
-        {
-            isDead = true;
-            Debug.Log("Obstacle");
         }
         if (isDead)
         {

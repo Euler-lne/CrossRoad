@@ -8,9 +8,18 @@ public class ScoreRecord : MonoBehaviour
     public Text scoreText;
     public int index;
     private int score;
+    public bool isOnline;
     private void OnEnable()
     {
-        score = GameManager.Instance.GetScoreAtIndex(index);
+        if (isOnline)
+        {
+            score = PlayfabManager.Instance.GetOnlineScoreAtIndex(index);
+        }
+        else
+        {
+            score = GameManager.Instance.GetScoreAtIndex(index);
+        }
+        Debug.Log(score);
         if (score == -1)
         {
             gameObject.SetActive(false);

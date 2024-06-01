@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class LeadBord : MonoBehaviour
 {
     public GameObject bord;
+    public bool isOnline;
     public bool isOpen;
     private Button button;
     private bool isActive;
@@ -25,6 +26,7 @@ public class LeadBord : MonoBehaviour
 
     private void ClickLeadBord()
     {
+        if (isOnline) { PlayfabManager.Instance.GetLeaderboardData(); }
         isActive = isOpen;
         bord.SetActive(isActive);
     }
