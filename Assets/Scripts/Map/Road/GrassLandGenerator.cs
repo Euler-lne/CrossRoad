@@ -13,12 +13,15 @@ public class GrassLandGenerator : TerrainGenerator
     public Transform BuildingParent;
     public Transform ObstacleParent;
     public Transform PlantParent;
+    private int[] position = new int[10];
+    private int[] distence = new int[10];
     private int[,] grassMap = new int[10, 5];
     private float width = 2.35f;
     // Start is called before the first frame update
     void Start()
     {
         InitGrassMap();
+        CheckGrassMap();
         GenerateGrassMap();
         landHeight = width * 11;
     }
@@ -28,6 +31,7 @@ public class GrassLandGenerator : TerrainGenerator
         for (int i = 0; i < 10; i++)
         {
             int passPos = Random.Range(0, 5);
+            position[i] = passPos;
             grassMap[i, passPos] = Random.Range(0f, 1f) >= 0.25f ? 1 : 2;
             for (int j = 0; j < 5; j++)
             {
@@ -36,6 +40,7 @@ public class GrassLandGenerator : TerrainGenerator
                 {
                     // 可以通过的位置
                     grassMap[i, j] = isLongJump ? 1 : 2;
+                    distence[i] = grassMap[i, j];
                 }
                 else
                 {
@@ -69,6 +74,32 @@ public class GrassLandGenerator : TerrainGenerator
         // }
         // Debug.LogFormat(outPut);
     }
+
+    void CheckGrassMap()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            if (distence[i] == 1)
+            {
+                if (i + 1 >= 10) continue;
+                if (position[i] == position[i + 1]) continue;
+                int start = position[i] < position[i + 1] ? position[i] : position[i + 1];
+                int end = position[i] > position[i + 1] ? position[i] : position[i + 1];
+                for (int j = start; j <= end; j++)
+                {
+                    if (grassMap[i, j] == 2)
+                    {
+                        grassMap[i, j] = Random.Range(0f, 1f) >= 0.5f ? 0 : 1;
+                    }
+                }
+            }
+            else
+            {
+                i++;
+            }
+        }
+    }
+
     void GenerateGrassMap()
     {
         for (int i = 0; i < 10; i++)
