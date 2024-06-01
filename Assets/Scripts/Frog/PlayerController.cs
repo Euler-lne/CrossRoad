@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,6 +10,7 @@ public class PlayerController : MonoBehaviour
     public Sprite upSprite;
     public Sprite leftSprite;
     public Sprite rightSprite;
+    public GameObject cancelZone;
     private SpriteRenderer dirctionSpriteRenderer;
     private enum Direction
     {
@@ -84,8 +84,11 @@ public class PlayerController : MonoBehaviour
     }
     private void OnDestroy()
     {
-        isDead = false;
-        EventHandler.CallFrogDead();
+        if (!isDead)
+        {
+            isDead = true;
+            EventHandler.CallFrogDead();
+        }
     }
 
     private void OnTriggerStay2D(Collider2D other)
@@ -186,13 +189,19 @@ public class PlayerController : MonoBehaviour
             isLongJump = true;
             dirObject.SetActive(true);
             SetDirectionSprite();
+            cancelZone.SetActive(true);
         }
         if (context.canceled && isLongJump)
         {
             // 退出执行，同时监测到键盘的抬起，键盘抬起就会调用，不会管是否执行了performed
             isLongJump = false;
-            canJump = true;
-            AudioManager.Instance.SetJumpClip(1);
+            if (!IsInCancelZone())
+            {
+                canJump = true;
+                AudioManager.Instance.SetJumpClip(1);
+            }
+            dirObject.SetActive(false);
+            cancelZone.SetActive(false);
         }
     }
     public void GetTouchPosition(InputAction.CallbackContext context)
@@ -222,6 +231,21 @@ public class PlayerController : MonoBehaviour
         {
             direction = Direction.NoDir;
         }
+    }
+    private bool IsInCancelZone()
+    {
+        RaycastHit2D[] result = new RaycastHit2D[10];
+        Physics2D.RaycastNonAlloc(touchPosition, Vector2.one * 0.1f, result, 0.5f);
+        foreach (var hit in result)
+        {
+            if (hit.collider == null) continue;
+            if (hit.collider.CompareTag("CancelJump"))
+            {
+                return true;
+            }
+        }
+        return false;
+
     }
     #endregion
     private void SetDirectionSprite()

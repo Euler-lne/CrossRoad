@@ -2,28 +2,28 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class PlayBtn : MonoBehaviour
+public class RuleBtn : MonoBehaviour
 {
+    public GameObject ruleObj;
+    public bool isShow;
     private Button button;
     private void Awake()
     {
         button = GetComponent<Button>();
     }
-
     private void OnEnable()
     {
-        button.onClick.AddListener(StartGame);
+        button.onClick.AddListener(ClickRule);
     }
     private void OnDisable()
     {
-        button.onClick.RemoveListener(StartGame);
+        button.onClick.RemoveListener(ClickRule);
     }
 
-    private void StartGame()
+    private void ClickRule()
     {
-        TransitionManager.Instance.Transition("Gameplay");
+        ruleObj.SetActive(isShow);
     }
 }

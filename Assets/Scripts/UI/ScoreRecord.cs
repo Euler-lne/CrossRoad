@@ -9,17 +9,27 @@ public class ScoreRecord : MonoBehaviour
     public int index;
     private int score;
     public bool isOnline;
+    public Text playerName;
     private void OnEnable()
     {
         if (isOnline)
         {
             score = PlayfabManager.Instance.GetOnlineScoreAtIndex(index);
+            playerName.text = PlayfabManager.Instance.GetOnlineNameAtIndex(index);
+            if (PlayfabManager.Instance.IsCurUserName(index))
+            {
+                playerName.color = Color.blue;
+            }
+            else
+            {
+                playerName.color = Color.black;
+            }
+
         }
         else
         {
             score = GameManager.Instance.GetScoreAtIndex(index);
         }
-        Debug.Log(score);
         if (score == -1)
         {
             gameObject.SetActive(false);

@@ -20,4 +20,10 @@ public static class EventHandler
         FrogDead?.Invoke();
     }
 
+    public static event Action NetworkError;
+    public static void CallNetworkError()
+    {
+        NetworkError?.Invoke();
+    }
+
 }

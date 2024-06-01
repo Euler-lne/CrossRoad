@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class GameManager : Singleton<GameManager>
 {
+    public bool isOffLine;
     private List<int> scoreList;
     private int score;
     private string dataPath;
