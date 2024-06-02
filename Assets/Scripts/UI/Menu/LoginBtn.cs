@@ -38,7 +38,15 @@ public class LoginBtn : MonoBehaviour
         loading.SetActive(true);
         try
         {
-            await PlayfabManager.Instance.SubmitNameAsync(inputFiled.text);
+            Settings.LoginReturnType type = await PlayfabManager.Instance.SubmitNameAsync(inputFiled.text);
+            if (type == Settings.LoginReturnType.SameName)
+            {
+                info = "你输入的名字和之前相同";
+            }
+            else if (type == Settings.LoginReturnType.NameRepeat)
+            {
+                info = "名字已经被占用";
+            }
             StartCoroutine(SetNetworkInfo());
             GameManager.Instance.isOffLine = false;
         }
@@ -55,7 +63,7 @@ public class LoginBtn : MonoBehaviour
 
     private void OnLoginBtn()
     {
-        if (PlayfabManager.Instance.IsLogin())
+        if (PlayfabManager.Instance.IsHaveName())
         {
             infoText.text = "已登录 输入可更名";
             info = "更改名字成功";
