@@ -62,6 +62,17 @@ public class PlayerController : MonoBehaviour
             isOnWood = false;
             TriggerJump();
         }
+        if (isLongJump)
+        {
+            if (IsInCancelZone())
+            {
+                cancelZone.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0.5f);
+            }
+            else
+            {
+                cancelZone.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0.25f);
+            }
+        }
     }
 
     private void FixedUpdate()
@@ -245,7 +256,6 @@ public class PlayerController : MonoBehaviour
             }
         }
         return false;
-
     }
     #endregion
     private void SetDirectionSprite()

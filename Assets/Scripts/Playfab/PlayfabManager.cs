@@ -11,8 +11,9 @@ public class PlayfabManager : Singleton<PlayfabManager>
     private List<int> scoreList;
     private List<string> nameList;
     private bool isLogin;
-    public bool IsLogin() { return isLogin; }
+    public bool IsHaveName() { return userName != string.Empty; }
     private string userName = string.Empty;
+    private int maxScore;
     protected override void Awake()
     {
         base.Awake();
@@ -22,12 +23,6 @@ public class PlayfabManager : Singleton<PlayfabManager>
 
     private void Login()
     {
-        // 闭包方法
-        // var request = new LoginWithCustomIDRequest
-        // {
-        //     CustomId = SystemInfo.deviceUniqueIdentifier,
-        //     CreateAccount = true,
-        // };
         var request = new LoginWithCustomIDRequest
         {
             CustomId = SystemInfo.deviceUniqueIdentifier,
@@ -86,6 +81,7 @@ public class PlayfabManager : Singleton<PlayfabManager>
 
     public void SendLeaderboard(int score)
     {
+        maxScore = score;
         if (!isLogin || !IsUserNameInit()) return;
         var request = new UpdatePlayerStatisticsRequest();
         request.Statistics = new List<StatisticUpdate>
@@ -96,6 +92,32 @@ public class PlayfabManager : Singleton<PlayfabManager>
             },
         };
         PlayFabClientAPI.UpdatePlayerStatistics(request, OnUpdatePlayerStatistics, OnError);
+    }
+    private async Task<UpdatePlayerStatisticsResult> SenLeaderboardAsync()
+    {
+        var request = new UpdatePlayerStatisticsRequest();
+        request.Statistics = new List<StatisticUpdate>
+        {
+            new StatisticUpdate{
+                StatisticName = "HighScores",
+                Value = maxScore
+            },
+        };
+        var t = new TaskCompletionSource<UpdatePlayerStatisticsResult>();
+
+        // 发起异步请求获取排行榜数据
+        PlayFabClientAPI.UpdatePlayerStatistics(request, result =>
+        {
+            // 设置 TaskCompletionSource 的结果为获取到的排行榜数据
+            t.SetResult(result);
+        }, error =>
+        {
+            // 处理错误情况
+            OnError(error);
+            // 设置 TaskCompletionSource 的异常为当前错误
+            t.SetException(new Exception(error.GenerateErrorReport()));
+        });
+        return await t.Task;
     }
 
     public int GetOnlineScoreAtIndex(int index)
@@ -160,6 +182,7 @@ public class PlayfabManager : Singleton<PlayfabManager>
             try
             {
                 var result = await LoginAsync();
+                await SenLeaderboardAsync();
             }
             catch (Exception e)
             {
@@ -211,7 +234,7 @@ public class PlayfabManager : Singleton<PlayfabManager>
     }
 
     #region 设置用户名字
-    public async Task<UpdateUserTitleDisplayNameResult> SubmitNameAsync(string name)
+    public async Task<Settings.LoginReturnType> SubmitNameAsync(string name)
     {
         if (!isLogin)
         {
@@ -234,16 +257,24 @@ public class PlayfabManager : Singleton<PlayfabManager>
                 DisplayName = name,
             };
 
-            var t = new TaskCompletionSource<UpdateUserTitleDisplayNameResult>();
+            var t = new TaskCompletionSource<Settings.LoginReturnType>();
 
             PlayFabClientAPI.UpdateUserTitleDisplayName(request, result =>
             {
                 OnDisplayNameUpdate(result);
-                t.SetResult(result);
+                t.SetResult(Settings.LoginReturnType.Success);
             }, error =>
             {
-                OnError(error);
-                t.SetException(new Exception(error.GenerateErrorReport()));
+                // Check if the error is related to the display name being the same
+                if (error.Error == PlayFabErrorCode.NameNotAvailable) // Replace with the actual error code for name not available
+                {
+                    t.SetResult(Settings.LoginReturnType.NameRepeat);
+                }
+                else
+                {
+                    OnError(error);
+                    t.SetException(new Exception(error.GenerateErrorReport()));
+                }
             });
 
             return await t.Task;
@@ -251,7 +282,7 @@ public class PlayfabManager : Singleton<PlayfabManager>
         else
         {
             Debug.Log("The display name is already the same as the remote name.");
-            return null; // Or handle it in another way if necessary
+            return Settings.LoginReturnType.SameName; // Or handle it in another way if necessary
         }
 
     }
@@ -291,48 +322,14 @@ public class PlayfabManager : Singleton<PlayfabManager>
     }
     #endregion
 
-
-    public async Task<int> GetUserRankAsync()
+    public int GetUserRank()
     {
-        if (!isLogin)
+        if (nameList == null || !IsHaveName()) return -1;
+        for (int i = 0; i < nameList.Count; i++)
         {
-            try
-            {
-                await LoginAsync();
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-                throw new Exception("Failed to login");
-            }
+            if (userName == nameList[i])
+                return i + 1;
         }
-
-        var request = new GetLeaderboardAroundPlayerRequest
-        {
-            StatisticName = "HighScores",
-            MaxResultsCount = 1
-        };
-
-        var t = new TaskCompletionSource<GetLeaderboardAroundPlayerResult>();
-
-        PlayFabClientAPI.GetLeaderboardAroundPlayer(request, result =>
-        {
-            t.SetResult(result);
-        }, error =>
-        {
-            OnError(error);
-            t.SetException(new Exception(error.GenerateErrorReport()));
-        });
-
-        var leaderboardResult = await t.Task;
-        // 检查返回的排行榜列表是否为空
-        if (leaderboardResult.Leaderboard == null || leaderboardResult.Leaderboard.Count == 0)
-        {
-            Debug.LogWarning("Player does not have a rank in the leaderboard.");
-            return -1; // 或者返回一个适当的默认值，例如-1
-        }
-        var userRank = leaderboardResult.Leaderboard[0].Position;
-
-        return userRank + 1;
+        return -1;
     }
 }

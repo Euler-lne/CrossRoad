@@ -11,6 +11,8 @@ public class PlayBtn : MonoBehaviour
     public GameObject nameInputPanel;
     public Text inputFiled;
     public GameObject loading;
+    public Text networkFianlInfo;
+    private string info;
     private void Awake()
     {
         button = GetComponent<Button>();
@@ -35,10 +37,26 @@ public class PlayBtn : MonoBehaviour
         loading.SetActive(true);
         try
         {
-            await PlayfabManager.Instance.SubmitNameAsync(inputFiled.text);
-            nameInputPanel.SetActive(false);
-            loading.SetActive(false);
+            Settings.LoginReturnType type = await PlayfabManager.Instance.SubmitNameAsync(inputFiled.text);
             GameManager.Instance.isOffLine = false;
+            if (type == Settings.LoginReturnType.Success)
+            {
+                nameInputPanel.SetActive(false);
+                TransitionManager.Instance.Transition("Gameplay");
+            }
+            else
+            {
+                if (type == Settings.LoginReturnType.SameName)
+                {
+                    info = "你输入的名字和之前相同";
+                }
+                else if (type == Settings.LoginReturnType.NameRepeat)
+                {
+                    info = "名字已经被占用";
+                }
+                StartCoroutine(SetNetworkInfo());
+            }
+
         }
         catch
         {
@@ -72,5 +90,15 @@ public class PlayBtn : MonoBehaviour
         yield return new WaitForSeconds(Settings.NetworkInfoDuration);
         loading.SetActive(false);
         nameInputPanel.SetActive(false);
+    }
+
+    private IEnumerator SetNetworkInfo()
+    {
+        networkFianlInfo.GetComponent<LoadingText>().ChangeFianlInfo(info);
+        EventHandler.CallNetworkError();
+        yield return new WaitForSeconds(Settings.NetworkInfoDuration);
+        loading.SetActive(false);
+        nameInputPanel.SetActive(false);
+        networkFianlInfo.GetComponent<LoadingText>().ResetFainlInfo();
     }
 }

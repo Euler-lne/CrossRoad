@@ -48,7 +48,10 @@ PlayerSettings:
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 0
   m_ActiveColorSpace: 0
+<<<<<<< HEAD
   unsupportedMSAAFallback: 0
+=======
+>>>>>>> 8ee451bfde0b923a8c739fab841d0dad6ffbec3b
   m_SpriteBatchVertexThreshold: 300
   m_MTRendering: 1
   mipStripping: 0
@@ -137,8 +140,11 @@ PlayerSettings:
   vulkanEnableLateAcquireNextImage: 0
   vulkanEnableCommandBufferRecycling: 1
   loadStoreDebugModeEnabled: 0
+<<<<<<< HEAD
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
+=======
+>>>>>>> 8ee451bfde0b923a8c739fab841d0dad6ffbec3b
   bundleVersion: 1.0
   preloadedAssets: []
   metroInputSource: 0
@@ -258,7 +264,11 @@ PlayerSettings:
   useCustomLauncherGradleManifest: 0
   useCustomBaseGradleTemplate: 0
   useCustomGradlePropertiesTemplate: 0
+<<<<<<< HEAD
   useCustomGradleSettingsTemplate: 1
+=======
+  useCustomGradleSettingsTemplate: 0
+>>>>>>> 8ee451bfde0b923a8c739fab841d0dad6ffbec3b
   useCustomProguardFile: 0
   AndroidTargetArchitectures: 3
   AndroidTargetDevices: 0

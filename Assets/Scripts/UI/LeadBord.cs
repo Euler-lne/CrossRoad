@@ -35,7 +35,7 @@ public class LeadBord : MonoBehaviour
             try
             {
                 await PlayfabManager.Instance.GetLeaderboardDataAsync();
-                int rank = await PlayfabManager.Instance.GetUserRankAsync();
+                int rank = PlayfabManager.Instance.GetUserRank();
                 SetRankText(rank);
                 isSuccess = true;
             }
@@ -67,5 +67,6 @@ public class LeadBord : MonoBehaviour
             rankText.text = "你没有登录";
         }
         string temp = "你是第" + rank.ToString() + "名";
+        rankText.text = temp;
     }
 }
