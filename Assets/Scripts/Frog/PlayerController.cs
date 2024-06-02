@@ -39,6 +39,10 @@ public class PlayerController : MonoBehaviour
     private int score;
     private const int RiverTestTimes = 3;
     private int riverTestTimer;
+
+    private float shortPressDuration = 0.2f; // 短按持续时间（秒）
+    private float longPressDuration = 0.5f;  // 长按持续时间（秒）
+    private float longPressTimer = 0f;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -73,6 +77,10 @@ public class PlayerController : MonoBehaviour
                 cancelZone.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0.25f);
             }
         }
+        // 调用新的触摸检测函数
+        CheckJump();
+        CheckLongJump();
+        UpdateTouchPosition();
     }
 
     private void FixedUpdate()
@@ -173,7 +181,127 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-    #region INPUT 输入回调函数
+    private void CheckJump()
+    {
+        if (isJump || isDead) return;
+
+        originPosition = transform.position;
+
+        if (Input.touchCount > 0)
+        {
+            UnityEngine.Touch touch = Input.GetTouch(0); // 指定 UnityEngine 命名空间
+            if (touch.phase == UnityEngine.TouchPhase.Began) // 指定 UnityEngine 命名空间
+            {
+                longPressTimer = 0f; // 重置长按计时器
+            }
+            else if (touch.phase == UnityEngine.TouchPhase.Stationary) // 指定 UnityEngine 命名空间
+            {
+                longPressTimer += Time.deltaTime;
+            }
+            else if (touch.phase == UnityEngine.TouchPhase.Ended) // 指定 UnityEngine 命名空间
+            {
+                if (longPressTimer < shortPressDuration)
+                {
+                    // 短按触发跳跃
+                    moveDistance = jumpDistance;
+                    UpdateXValude();
+                    canJump = true;
+                    AudioManager.Instance.SetJumpClip(0);
+                    dirObject.SetActive(true);
+                    SetDirectionSprite();
+                }
+            }
+        }
+    }
+
+    private void CheckLongJump()
+    {
+        if (isJump || isDead) return;
+
+        originPosition = transform.position;
+
+        if (Input.touchCount > 0)
+        {
+            UnityEngine.Touch touch = Input.GetTouch(0); // 指定 UnityEngine 命名空间
+            if (touch.phase == UnityEngine.TouchPhase.Began) // 指定 UnityEngine 命名空间
+            {
+                longPressTimer = 0f; // 重置长按计时器
+            }
+            else if (touch.phase == UnityEngine.TouchPhase.Stationary) // 指定 UnityEngine 命名空间
+            {
+                longPressTimer += Time.deltaTime;
+                if (longPressTimer >= longPressDuration)
+                {
+                    // 长按触发长跳
+                    moveDistance = jumpDistance * 2;
+                    UpdateXValude();
+                    isLongJump = true;
+                    dirObject.SetActive(true);
+                    SetDirectionSprite();
+                    cancelZone.SetActive(true);
+                }
+            }
+            else if (touch.phase == UnityEngine.TouchPhase.Ended) // 指定 UnityEngine 命名空间
+            {
+                if (longPressTimer < longPressDuration)
+                {
+                    // 短按触发跳跃
+                    moveDistance = jumpDistance;
+                    UpdateXValude();
+                    canJump = true;
+                    AudioManager.Instance.SetJumpClip(0);
+                    dirObject.SetActive(true);
+                    SetDirectionSprite();
+                }
+                else if (isLongJump)
+                {
+                    // 长按结束
+                    if (!IsInCancelZone())
+                    {
+                        canJump = true;
+                        AudioManager.Instance.SetJumpClip(1);
+                    }
+                    dirObject.SetActive(false);
+                    cancelZone.SetActive(false);
+                    isLongJump = false;
+                }
+            }
+        }
+    }
+    private void UpdateTouchPosition()
+    {
+        if (isDead) return;
+
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            touchPosition = Camera.main.ScreenToWorldPoint(touch.position);
+            var offset = touchPosition.x;
+
+            if (!isJump)
+            {
+                if (Mathf.Abs(offset) / (2.35f * 2) <= 0.5f)
+                {
+                    direction = Direction.Up;
+                }
+                else if (offset > 0)
+                {
+                    direction = Direction.Right;
+                }
+                else
+                {
+                    direction = Direction.Left;
+                }
+                SetDirectionSprite();
+                jumpDirction = direction;
+            }
+            else
+            {
+                direction = Direction.NoDir;
+            }
+        }
+    }
+
     public void Jump(InputAction.CallbackContext context)
     {
         if (isJump || isDead) return;
@@ -257,7 +385,6 @@ public class PlayerController : MonoBehaviour
         }
         return false;
     }
-    #endregion
     private void SetDirectionSprite()
     {
         // 一定要注意图片的翻转问题！！！
