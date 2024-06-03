@@ -14,18 +14,36 @@ public class PlayfabManager : Singleton<PlayfabManager>
     public bool IsHaveName() { return userName != string.Empty; }
     private string userName = string.Empty;
     private int maxScore;
+    private string uniqueIdentifier;
     protected override void Awake()
     {
         base.Awake();
         DontDestroyOnLoad(this);
+        uniqueIdentifier = GetUniqueIdentifier();
         Login();
+    }
+
+    private string GetUniqueIdentifier()
+    {
+#if UNITY_WEBGL
+        string id = PlayerPrefs.GetString("uniqueIdentifier", string.Empty);
+        if (string.IsNullOrEmpty(id))
+        {
+            id = Guid.NewGuid().ToString();
+            PlayerPrefs.SetString("uniqueIdentifier", id);
+            PlayerPrefs.Save();
+        }
+        return id;
+#else
+        return SystemInfo.deviceUniqueIdentifier;
+#endif
     }
 
     private void Login()
     {
         var request = new LoginWithCustomIDRequest
         {
-            CustomId = SystemInfo.deviceUniqueIdentifier,
+            CustomId = uniqueIdentifier,
             CreateAccount = true,
             // 发送数据混合请求
             InfoRequestParameters = new GetPlayerCombinedInfoRequestParams
@@ -49,7 +67,7 @@ public class PlayfabManager : Singleton<PlayfabManager>
     {
         var request = new LoginWithCustomIDRequest
         {
-            CustomId = SystemInfo.deviceUniqueIdentifier,
+            CustomId = uniqueIdentifier,
             CreateAccount = true
         };
 
@@ -330,6 +348,6 @@ public class PlayfabManager : Singleton<PlayfabManager>
             if (userName == nameList[i])
                 return i + 1;
         }
-        return -1;
+        return 0;
     }
 }

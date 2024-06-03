@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
 using UnityEngine;
+using Newtonsoft.Json;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -10,6 +9,7 @@ public class GameManager : Singleton<GameManager>
     private List<int> scoreList;
     private int score;
     private string dataPath;
+
     protected override void Awake()
     {
         base.Awake();
@@ -17,11 +17,13 @@ public class GameManager : Singleton<GameManager>
         scoreList = GetScoreList();
         DontDestroyOnLoad(this);
     }
+
     private void OnEnable()
     {
         EventHandler.FrogDead += OnFrogDead;
         EventHandler.FrogJumpSucceed += OnFrogJumpSucceed;
     }
+
     private void OnDisable()
     {
         EventHandler.FrogDead -= OnFrogDead;
@@ -32,6 +34,7 @@ public class GameManager : Singleton<GameManager>
     {
         score = _score;
     }
+
     public int GetScoreAtIndex(int index)
     {
         if (index > scoreList.Count - 1)
@@ -52,7 +55,9 @@ public class GameManager : Singleton<GameManager>
         {
             scoreList = scoreList.GetRange(0, 10);
         }
-        File.WriteAllText(dataPath, JsonConvert.SerializeObject(scoreList));
+
+        SaveScoreList();
+
         int maxScore = scoreList.Count > 0 ? scoreList[0] : score;
         if (maxScore > 0)
             PlayfabManager.Instance.SendLeaderboard(maxScore);
@@ -60,16 +65,39 @@ public class GameManager : Singleton<GameManager>
 
     private List<int> GetScoreList()
     {
+#if UNITY_WEBGL
+        string jsonData = PlayerPrefs.GetString("leaderboard", string.Empty);
+        if (!string.IsNullOrEmpty(jsonData))
+        {
+            List<int> list = JsonConvert.DeserializeObject<List<int>>(jsonData);
+            if (list.Count > 10)
+            {
+                list = list.GetRange(0, 10);
+            }
+            return list;
+        }
+#else
         if (File.Exists(dataPath))
         {
             string jsonData = File.ReadAllText(dataPath);
             List<int> list = JsonConvert.DeserializeObject<List<int>>(jsonData);
             if (list.Count > 10)
             {
-                list = scoreList.GetRange(0, 10);
+                list = list.GetRange(0, 10);
             }
             return list;
         }
-        return new();
+#endif
+        return new List<int>();
+    }
+
+    private void SaveScoreList()
+    {
+#if UNITY_WEBGL
+        PlayerPrefs.SetString("leaderboard", JsonConvert.SerializeObject(scoreList));
+        PlayerPrefs.Save();
+#else
+        File.WriteAllText(dataPath, JsonConvert.SerializeObject(scoreList));
+#endif
     }
 }

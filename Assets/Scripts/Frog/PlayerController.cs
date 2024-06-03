@@ -301,7 +301,6 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-
     public void Jump(InputAction.CallbackContext context)
     {
         if (isJump || isDead) return;

@@ -66,10 +66,13 @@ public class LeadBord : MonoBehaviour
         {
             rankText.text = "你没有登录";
         }
+        else if (rank == 0)
+        {
+            rankText.text = "未曾游玩 没有记录";
+        }
         else
         {
-            string temp = "你是第" + rank.ToString() + "名";
-            rankText.text = temp;
+            rankText.text = "你是第" + rank.ToString() + "名";
         }
     }
 }
